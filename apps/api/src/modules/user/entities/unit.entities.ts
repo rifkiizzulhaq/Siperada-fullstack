@@ -29,7 +29,7 @@ export class Unit {
   @Column({ unique: true })
   nip: string;
 
-  @OneToOne(() => User, (user) => user.unit)
+  @OneToOne(() => User, (user) => user.unit, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 

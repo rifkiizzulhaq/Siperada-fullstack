@@ -25,7 +25,8 @@ import {
   BadgeCheckIcon,
   LogOutIcon,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import api from "../../lib/axios";
 
 export function NavUser({
   user,
@@ -37,20 +38,13 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const { data: session } = useSession();
+
 
   const handleLogout = async () => {
     try {
-      if (session?.accessToken) {
-        await fetch("http://localhost:3000/api/v1/auth/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        });
-      }
+      await api.post("/auth/logout");
     } catch (error) {
-      console.error("Failed to logout from server:", error);
+      console.error("Logout failed", error);
     }
     await signOut({ callbackUrl: "/login" });
   };

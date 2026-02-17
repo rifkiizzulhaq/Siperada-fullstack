@@ -12,16 +12,24 @@ class CustomAuthError extends CredentialsSignin {
   }
 }
 
-// Lock to prevent multiple refresh requests
-let refreshPromise: Promise<any> | null = null;
 
-async function refreshAccessToken(refreshToken: string) {
+type RefreshTokenResult = 
+  | { accessToken: string; refreshToken: string; expiresAt: number }
+  | { error: string };
+
+let refreshPromise: Promise<RefreshTokenResult> | null = null;
+const refreshedTokens = new Map<string, { result: RefreshTokenResult, timestamp: number }>();
+
+async function refreshAccessToken(refreshToken: string): Promise<RefreshTokenResult> {
+  const cached = refreshedTokens.get(refreshToken);
+  if (cached && Date.now() - cached.timestamp < 10000) { 
+    return cached.result;
+  }
+
   if (refreshPromise) {
-     console.log("REFRESH ALREADY IN PROGRESS, WAITING...");
      return refreshPromise;
   }
 
-  console.log("REFRESHING TOKEN...");
   refreshPromise = (async () => {
     try {
       const res = await fetch("http://localhost:3000/api/v1/auth/refresh", {
@@ -29,16 +37,23 @@ async function refreshAccessToken(refreshToken: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: refreshToken }),
       });
-      console.log("TOKEN REFRESHED!");
+      
       if (!res.ok) throw new Error("Failed to refresh");
       const data = await res.json();
-      return {
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
+
+      if (!data.data || !data.data.accessToken || !data.data.refreshToken) {
+        throw new Error("Invalid refresh token response structure");
+      }
+      
+      const newTokens = {
+        accessToken: data.data.accessToken, 
+        refreshToken: data.data.refreshToken, 
         expiresAt: Date.now() + 15 * 60 * 1000,
       };
+      refreshedTokens.set(refreshToken, { result: newTokens, timestamp: Date.now() });
+      
+      return newTokens;
     } catch (error) {
-      console.log("REFRESH FAILED", error);
       return { error: "RefreshTokenError" };
     } finally {
       refreshPromise = null;
@@ -112,11 +127,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      if (token.expiresAt && Date.now() < token.expiresAt) {
+      if (token.error) {
         return token;
       }
 
-      if (token.refreshToken) {
+      const shouldRefresh = token.expiresAt && Date.now() > token.expiresAt;
+      
+      if (shouldRefresh && token.refreshToken) {
         const refreshed = await refreshAccessToken(token.refreshToken);
         
         if ("error" in refreshed) {
@@ -128,6 +145,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           accessToken: refreshed.accessToken,
           refreshToken: refreshed.refreshToken,
           expiresAt: refreshed.expiresAt,
+          error: undefined,
         };
       }
 
@@ -139,7 +157,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role;
         session.user.permissions = token.permissions;
         session.accessToken = token.accessToken;
-        session.error = token.error;  
+        session.error = token.error;
       }
       return session;
     },

@@ -11,8 +11,8 @@ export class SearchUsersDto {
   role?: string;
 
   @IsOptional()
-  @IsString()
-  permission?: string;
+  @IsString({ each: true })
+  permission?: string | string[];
 
   @IsOptional()
   @IsInt()

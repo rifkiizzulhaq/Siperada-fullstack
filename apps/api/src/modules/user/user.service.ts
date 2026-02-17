@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entities';
-import { DeleteResult, In, Not, Repository } from 'typeorm';
+import { DeleteResult, In, Like, Not, Repository } from 'typeorm';
 import { Role } from './entities/role.entities';
 import { Admin } from './entities/admin.entities';
 import { Permission } from './entities/permission.entities';
@@ -35,14 +35,8 @@ export class UserService {
 
   findAllUser = async (): Promise<User[]> => {
     return await this.userRepository.find({
-      relations: [
-        'role',
-        'permissions',
-        'permission.name',
-        'admin',
-        'pemimpin',
-        'unit',
-      ],
+      where: { role: { name: Not('superadmin') } },
+      relations: ['role', 'permissions', 'admin', 'pemimpin', 'unit'],
     });
   };
 
@@ -98,7 +92,9 @@ export class UserService {
   };
 
   getAllPermission = async (): Promise<Permission[]> => {
-    return await this.permissionRepository.find();
+    return await this.permissionRepository.find({
+      where: { name: Not(Like('%superadmin:%')) },
+    });
   };
 
   create = async (data: CreateUser): Promise<User> => {
@@ -258,7 +254,18 @@ export class UserService {
   };
 
   delete = async (id: number): Promise<DeleteResult> => {
-    await this.findUserById(id);
+    const user = await this.findUserById(id);
+
+    if (user.role.name === 'unit') {
+      await this.unitRepository.delete({ userId: id });
+    }
+    if (user.role.name === 'admin') {
+      await this.adminRepository.delete({ userId: id });
+    }
+    if (user.role.name === 'pemimpin') {
+      await this.pemimpinRepository.delete({ userId: id });
+    }
+
     return await this.userRepository.delete(id);
   };
 
@@ -273,8 +280,10 @@ export class UserService {
       .leftJoinAndSelect('user.unit', 'unit');
     // .leftJoinAndSelect('user.pemimpin', 'pemimpin');
 
+    qb.where('role.name != :superadmin', { superadmin: 'superadmin' });
+
     if (query.search) {
-      qb.where('(user.name LIKE :search OR user.email LIKE :search)', {
+      qb.andWhere('(user.name LIKE :search OR user.email LIKE :search)', {
         search: `%${query.search}%`,
       });
     }
@@ -285,8 +294,11 @@ export class UserService {
     }
 
     if (query.permission) {
-      qb.andWhere('permission.name = :permission', {
-        permission: query.permission,
+      const permissions = Array.isArray(query.permission)
+        ? query.permission
+        : [query.permission];
+      qb.andWhere('permission.name IN (:...permissions)', {
+        permissions,
       });
     }
 

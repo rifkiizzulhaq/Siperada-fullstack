@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextProgress } from "@/src/providers/ProgressProvider";
+import QueryProvider from "@/src/providers/QueryProvider";
 
 import "@workspace/ui/globals.css";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
@@ -35,9 +36,11 @@ export default function RootLayout({
         >
           <AuthProvider>
             <SessionErrorHandler />
-            <TooltipProvider>
-              <NextProgress>{children}</NextProgress>
-            </TooltipProvider>
+            <QueryProvider>
+              <TooltipProvider>
+                <NextProgress>{children}</NextProgress>
+              </TooltipProvider>
+            </QueryProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

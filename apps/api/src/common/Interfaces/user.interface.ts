@@ -27,7 +27,7 @@ export interface UpdateUser {
 export class searchUsers {
   search?: string;
   role?: string;
-  permission?: string;
+  permission?: string | string[];
   page?: number;
   limit?: number;
   sortBy?: string;

@@ -38,7 +38,8 @@ export class TokenService {
       jti,
     };
 
-    return this.jwtService.sign(payload);
+    const signed = this.jwtService.sign(payload);
+    return signed;
   }
 
   async createRefreshToken(user: TokenUser): Promise<string> {
@@ -105,10 +106,21 @@ export class TokenService {
     );
 
     if (!data) {
-      const wasUsed = await this.redisService.get<RefreshTokenData>(
+      const wasUsed = await this.redisService.get<any>(
         `used_token:${token}`,
       );
+
       if (wasUsed) {
+        // Graceful Refresh Logic: Check if token was rotated recently (e.g. within 15 seconds)
+        const GRACE_PERIOD_MS = 15000;
+        const timeSinceRotation = Date.now() - (wasUsed.rotatedAt || 0);
+
+        if (wasUsed.rotatedTo && timeSinceRotation < GRACE_PERIOD_MS) {
+          // Return the already rotated tokens
+          return wasUsed.rotatedTo;
+        }
+
+        // If outside grace period or critical reuse detected
         await this.revokeAllUserTokens(wasUsed.userId);
         throw new UnauthorizedException(
           'Token digunakan kembali terdeteksi. Semua sesi telah dihentikan demi keamanan.',
@@ -125,15 +137,20 @@ export class TokenService {
       throw new NotFoundException('User tidak ditemukan');
     }
 
-    await this.redisService.set(
-      `token_digunakan:${token}`,
-      { userId: data.userId },
-      3600000,
-    );
-
     const accessToken = this.generateAccessToken(user);
-
     const newRefreshToken = await this.createRefreshToken(user);
+
+    // Store used token with rotation info for grace period
+    await this.redisService.set(
+      `used_token:${token}`,
+      { 
+        userId: data.userId,
+        rotatedTo: { accessToken, refreshToken: newRefreshToken },
+        rotatedAt: Date.now()
+      },
+      3600000, 
+    );
+    
     await this.revokeRefreshToken(token);
 
     return { accessToken, refreshToken: newRefreshToken };
