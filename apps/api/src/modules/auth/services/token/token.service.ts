@@ -11,6 +11,7 @@ import { UserService } from '../../../../modules/user/user.service';
 import {
   RefreshTokenData,
   TokenUser,
+  UsedTokenData,
 } from '../../../../common/Interfaces/auth.interface';
 
 @Injectable()
@@ -100,15 +101,16 @@ export class TokenService {
     return !!blacklisted;
   }
 
-  async refresh(token: string) {
+  async refresh(
+    token: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const data = await this.redisService.get<RefreshTokenData>(
       `refresh_token:${token}`,
     );
 
     if (!data) {
-      const wasUsed = await this.redisService.get<any>(
-        `used_token:${token}`,
-      );
+      const wasUsed: UsedTokenData | null =
+        await this.redisService.get<UsedTokenData>(`used_token:${token}`);
 
       if (wasUsed) {
         // Graceful Refresh Logic: Check if token was rotated recently (e.g. within 15 seconds)
@@ -141,16 +143,14 @@ export class TokenService {
     const newRefreshToken = await this.createRefreshToken(user);
 
     // Store used token with rotation info for grace period
-    await this.redisService.set(
-      `used_token:${token}`,
-      { 
-        userId: data.userId,
-        rotatedTo: { accessToken, refreshToken: newRefreshToken },
-        rotatedAt: Date.now()
-      },
-      3600000, 
-    );
-    
+    const usedTokenData: UsedTokenData = {
+      userId: data.userId,
+      rotatedTo: { accessToken, refreshToken: newRefreshToken },
+      rotatedAt: Date.now(),
+    };
+
+    await this.redisService.set(`used_token:${token}`, usedTokenData, 3600000);
+
     await this.revokeRefreshToken(token);
 
     return { accessToken, refreshToken: newRefreshToken };

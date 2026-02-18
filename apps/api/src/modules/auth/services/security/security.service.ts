@@ -6,7 +6,7 @@ export class SecurityService {
   constructor(private readonly redisService: RedisService) {}
 
   private getLockoutDuration(lockoutCount: number): number {
-    const durations = [1, 5, 5, 5, 5, 5]; 
+    const durations = [1, 5, 5, 5, 5, 5];
     const index = Math.min(lockoutCount - 1, durations.length - 1);
     return durations[index] * 60 * 1000;
   }

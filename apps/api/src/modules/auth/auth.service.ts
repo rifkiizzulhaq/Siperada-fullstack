@@ -41,7 +41,9 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
-  async refresh(token: string) {
+  async refresh(
+    token: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     return this.tokenService.refresh(token);
   }
 

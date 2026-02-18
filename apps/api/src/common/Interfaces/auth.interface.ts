@@ -36,3 +36,12 @@ export interface JwtPayload {
   permissions: number[];
   jti: string;
 }
+
+export interface UsedTokenData {
+  userId: number;
+  rotatedTo?: {
+    accessToken: string;
+    refreshToken: string;
+  };
+  rotatedAt: number;
+}
