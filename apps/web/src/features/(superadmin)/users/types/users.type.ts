@@ -24,6 +24,11 @@ export interface User {
   };
 }
 
+export interface UserFormProps {
+  mode: "add" | "edit";
+  id?: number;
+}
+
 export interface Meta {
   total: number;
   page: number;
@@ -55,3 +60,5 @@ export interface UsersActions {
 }
 
 export type UsersStore = UserState & UsersActions;
+
+export type { CreateUserInput, UpdateUserInput } from "../schemas/user.schema";

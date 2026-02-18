@@ -309,7 +309,7 @@ export class UserService {
 
     // pagination
     const page = query.page || 1;
-    const limit = query.limit || 10;
+    const limit = query.limit || 5;
     qb.skip((page - 1) * limit).take(limit);
 
     const [data, total] = await qb.getManyAndCount();

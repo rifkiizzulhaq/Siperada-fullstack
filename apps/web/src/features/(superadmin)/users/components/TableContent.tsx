@@ -13,8 +13,8 @@ import {
   TableCell,
 } from "@workspace/ui/components/table";
 import { Button } from "@workspace/ui/components/button";
-import { Trash, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
-import { UsersDialog } from "./dialog/UserDialog";
+import { Trash, ChevronUp, ChevronDown, ChevronsUpDown, Plus, SquarePen } from "lucide-react";
+import { UsersForm } from "./dialog/UserForm";
 import {
   Popover,
   PopoverContent,
@@ -23,7 +23,17 @@ import {
 import { useDataTableUser } from "../hooks/useUser.hooks";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { deleteUser } from "../api/users.api";
-import EditUsers from "./EditUsers";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog";
+import { toast } from "@workspace/ui/components/sonner";
 import { useUsersStore } from "../store/users.store";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -31,15 +41,14 @@ import { useEffect, useState } from "react";
 export default function TableContent() {
   const { data: response, isLoading, error } = useDataTableUser();
   const queryClient = useQueryClient();
-  const { filters, setSearch, setFilters } = useUsersStore();
+  const { filters, setSearch, setFilters, openDialog } = useUsersStore();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Local state for debounce
   const [searchValue, setSearchValue] = useState(filters.search);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Sync URL/Store -> Local Search State
   useEffect(() => {
     const SearchValue = () => {
       setSearchValue(filters.search);
@@ -47,7 +56,6 @@ export default function TableContent() {
     SearchValue()
   }, [filters.search]);
 
-  // Debounce Logic
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (searchValue !== filters.search) {
@@ -57,7 +65,6 @@ export default function TableContent() {
     return () => clearTimeout(timeout);
   }, [searchValue, setSearch, filters.search]);
 
-  // Sync URL -> Store on mount
   useEffect(() => {
     const search = searchParams.get("search");
     const role = searchParams.get("role");
@@ -73,14 +80,13 @@ export default function TableContent() {
         role: role || undefined,
         permission: permission.length > 0 ? permission : undefined,
         page: page ? parseInt(page) || 1 : 1,
-        limit: limit ? parseInt(limit) || 10 : 10,
+        limit: limit ? parseInt(limit) || 5 : 5,
         sortBy: sortBy || "id",
         sortOrder: (sortOrder as "ASC" | "DESC") || "DESC",
       });
     }
   }, [searchParams, setFilters]);
 
-  // Sync Store -> URL
   useEffect(() => {
     const params = new URLSearchParams();
     if (filters.search) params.append("search", filters.search);
@@ -90,7 +96,7 @@ export default function TableContent() {
     }
     if (filters.page && filters.page !== 1)
       params.append("page", filters.page.toString());
-    if (filters.limit && filters.limit !== 10)
+    if (filters.limit && filters.limit !== 5)
       params.append("limit", filters.limit.toString());
     if (filters.sortBy && filters.sortBy !== "id")
       params.append("sortBy", filters.sortBy);
@@ -109,21 +115,15 @@ export default function TableContent() {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["data-table"] });
-      alert("User deleted successfully");
+      toast.success("User berhasil di hapus");
     },
     onError: (error) => {
-      alert("Failed to delete user: " + error.message);
+      toast.error("Gagal menghapus user: " + error.message);
     },
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["data-table"] });
-  };
-
   const handlerHapus = (id: number) => {
-    if (confirm("Are you sure you want to delete this user?")) {
-      deleteMutation.mutate(id);
-    }
+    setDeleteId(id);
   };
 
   const handleSort = (field: string) => {
@@ -155,17 +155,19 @@ export default function TableContent() {
   return (
     <div className="w-full space-y-4">
       <Cards />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <Input
           placeholder="Cari..."
-          className="max-w-sm"
+          className="w-full order-last sm:order-none sm:max-w-sm"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
         />
         <SelectRoles />
         <SelectPermissions />
-        <div className="flex items-center gap-2 ml-auto">
-          <UsersDialog />
+        <div className="flex items-center gap-2 order-first sm:order-none sm:ml-auto">
+          <Button size="sm" className="w-full sm:w-auto" onClick={() => openDialog()}>
+            <Plus className="mr-2 h-4 w-4" /> Tambah User
+          </Button>
         </div>
       </div>
       <div className="rounded-md border">
@@ -225,7 +227,7 @@ export default function TableContent() {
               user?.map((item, index) => (
                 <TableRow key={item?.id}>
                   <TableCell className="capitalize">
-                    {index + 1 + (Number(filters.page) && !isNaN(Number(filters.page)) && Number(filters.page) > 0 ? Number(filters.page) - 1 : 0) * (Number(filters.limit) && !isNaN(Number(filters.limit)) && Number(filters.limit) > 0 ? Number(filters.limit) : 10)}
+                    {index + 1 + (Number(filters.page) && !isNaN(Number(filters.page)) && Number(filters.page) > 0 ? Number(filters.page) - 1 : 0) * (Number(filters.limit) && !isNaN(Number(filters.limit)) && Number(filters.limit) > 0 ? Number(filters.limit) : 5)}
                   </TableCell>
                   <TableCell className="capitalize">{item?.name}</TableCell>
                   <TableCell className="lowercase">{item?.email}</TableCell>
@@ -236,7 +238,7 @@ export default function TableContent() {
                   </TableCell>
                   <TableCell className="capitalize">
                     <div className="flex flex-wrap gap-1 max-w-[300px]">
-                      {item?.permissions.slice(0, 3).map((perm: any) => (
+                      {item?.permissions.slice(0, 3).map((perm) => (
                         <span key={perm.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-foreground/20 bg-secondary text-secondary-foreground hover:bg-secondary/80">
                           {perm.name}
                         </span>
@@ -250,7 +252,7 @@ export default function TableContent() {
                           </PopoverTrigger>
                           <PopoverContent className="w-80 p-4">
                             <div className="flex flex-wrap gap-1">
-                              {item?.permissions.map((perm: any) => (
+                              {item?.permissions.map((perm) => (
                                 <span key={perm.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-foreground/20 bg-secondary text-secondary-foreground hover:bg-secondary/80">
                                   {perm.name}
                                 </span>
@@ -268,7 +270,7 @@ export default function TableContent() {
                     {item?.unit?.nama_unit || "-"}
                   </TableCell>
                   <TableCell className="capitalize">
-                    {item?.role.name === "unit" && item?.unit?.bidang}
+                    {item?.role.name === "unit" && item?.unit?.bidang || "-"}
                     {item?.role.name === "pemimpin" && item?.pemimpin?.bidang}
                   </TableCell>
                   <TableCell className="lowercase">
@@ -277,20 +279,26 @@ export default function TableContent() {
                     {item?.role.name === "pemimpin" && item?.pemimpin?.nip}
                   </TableCell>
                   <TableCell className="lowercase">
-                    {item?.role.name === "admin" && item?.admin?.nidn}
+                    {item?.role.name === "admin" && item?.admin?.nidn || "-"}
                     {item?.role.name === "pemimpin" && item?.pemimpin?.nidn}
                   </TableCell>
 
-                  <TableCell className="text-center flex items-center justify-center">
-                    <EditUsers item={item} onSuccess={handleRefresh} />
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="mx-2"
-                      onClick={() => handlerHapus(item.id)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => openDialog(item)}
+                      >
+                         <SquarePen className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handlerHapus(item.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -298,6 +306,30 @@ export default function TableContent() {
           </TableBody>
         </Table>
       </div>
+      <UsersForm />
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apakah kamu yakin ingin menghapus user ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus akun user secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteId) deleteMutation.mutate(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex items-center justify-between space-x-2">
         <div className="flex-1 text-sm text-muted-foreground">

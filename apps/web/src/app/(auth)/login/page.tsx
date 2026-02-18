@@ -16,7 +16,7 @@ export default function LoginPage() {
                 className="object-contain"
               />
             </div>
-            Polindra Simdoc.
+            Polindra Siperada.
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">

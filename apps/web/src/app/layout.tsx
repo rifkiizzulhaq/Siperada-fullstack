@@ -3,6 +3,7 @@ import { NextProgress } from "@/src/providers/ProgressProvider";
 import QueryProvider from "@/src/providers/QueryProvider";
 
 import "@workspace/ui/globals.css";
+import { Toaster } from "@workspace/ui/components/sonner";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
 import { ThemeProvider } from "@/src/components/darkmode/theme-provider";
 import { AuthProvider } from "@/src/providers/AuthProvider";
@@ -38,7 +39,10 @@ export default function RootLayout({
             <SessionErrorHandler />
             <QueryProvider>
               <TooltipProvider>
-                <NextProgress>{children}</NextProgress>
+                <NextProgress>
+                  {children}
+                  <Toaster position="top-right" />
+                </NextProgress>
               </TooltipProvider>
             </QueryProvider>
           </AuthProvider>

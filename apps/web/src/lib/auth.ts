@@ -12,7 +12,6 @@ class CustomAuthError extends CredentialsSignin {
   }
 }
 
-
 type RefreshTokenResult = 
   | { accessToken: string; refreshToken: string; expiresAt: number }
   | { error: string };
@@ -54,7 +53,7 @@ async function refreshAccessToken(refreshToken: string): Promise<RefreshTokenRes
       
       return newTokens;
     } catch (error) {
-      return { error: "RefreshTokenError" };
+      return { error: `RefreshTokenError ${error}` };
     } finally {
       refreshPromise = null;
     }

@@ -23,7 +23,7 @@ import { usePermissions } from "../hooks/useUser.hooks";
 
 export const SelectPermissions = () => {
     const { filters, setPermission } = useUsersStore();
-    const { data: permissions, isLoading } = usePermissions();
+    const { data: permissions } = usePermissions();
     const [open, setOpen] = useState(false);
 
     const handleSelect = (value: string) => {

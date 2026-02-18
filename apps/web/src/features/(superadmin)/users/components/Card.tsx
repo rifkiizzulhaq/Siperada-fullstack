@@ -9,27 +9,10 @@ import {
 import {  
     Users,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useUserStats } from "../hooks/useUser.hooks";
 
 export default function Cards() {
-    // const [errCount, setErrCount] = useState(null)
-
-    // const adminCount = datasApi.filter(item => item.role === 'admin').length
-    // const unitCount = datasApi.filter(item => item.role === 'unit').length
-    // const pemimpinCount = datasApi.filter(item => item.role === 'pemimpin').length
-    // const totalUsers = datasApi.length
-
-    // useEffect(() => {
-    //     const ChecksData = () => {
-    //         if (datasApi.length === 0 && !loadings) {
-    //             setErrCount("Data tidak ada")
-    //         } else {
-    //             setErrCount(null)
-    //         }
-    //     }
-    //     ChecksData()
-    // }, [datasApi, loadings])
-
+    const { data: stats, isLoading } = useUserStats();
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -39,8 +22,9 @@ export default function Cards() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {/* {loadings ? "loading..." : errCount}
-                    {!loadings && datasApi.length > 0 && <div className="text-2xl font-bold">{totalUsers}</div>} */}
+                    <div className="text-2xl font-bold">
+                        {isLoading ? "..." : stats?.total || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">Semua pengguna terdaftar</p>
                 </CardContent>
             </Card>
@@ -50,13 +34,10 @@ export default function Cards() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {/* {loadings ? "loading..." : errCount}
-                    {!loadings && datasApi.length > 0 && (
-                        <>
-                            <div className="text-2xl font-bold">{adminCount}</div>
-                            <p className="text-xs text-muted-foreground">{adminCount} admin terdaftar</p>
-                        </>
-                    )} */}
+                     <div className="text-2xl font-bold">
+                        {isLoading ? "..." : stats?.admin || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Admin terdaftar</p>
                 </CardContent>
             </Card>
             <Card>
@@ -65,13 +46,10 @@ export default function Cards() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {/* {loadings ? "loading..." : errCount}
-                    {!loadings && datasApi.length > 0 && (
-                        <>
-                            <div className="text-2xl font-bold">{pemimpinCount}</div>
-                            <p className="text-xs text-muted-foreground">{pemimpinCount} admin terdaftar</p>
-                        </>
-                    )} */}
+                     <div className="text-2xl font-bold">
+                        {isLoading ? "..." : stats?.pemimpin || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Pemimpin terdaftar</p>
                 </CardContent>
             </Card>
             <Card>
@@ -80,13 +58,10 @@ export default function Cards() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {/* {loadings ? "loading..." : errCount}
-                    {!loadings && datasApi.length > 0 && (
-                        <>
-                            <div className="text-2xl font-bold">{unitCount}</div>
-                            <p className="text-xs text-muted-foreground">{unitCount} admin terdaftar</p>
-                        </>
-                    )} */}
+                     <div className="text-2xl font-bold">
+                        {isLoading ? "..." : stats?.unit || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Unit terdaftar</p>
                 </CardContent>
             </Card>
         </div>
