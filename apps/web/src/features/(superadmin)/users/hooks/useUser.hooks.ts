@@ -8,12 +8,18 @@ import {
   CreateUserPayload,
   UpdateUserPayload,
 } from "../api/users.api";
-import { User, Meta } from "../types/users.type";
-import { useUsersStore } from "../store/users.store";
+import { User, UserTableFilters } from "../types/users.type";
+import { Meta } from "@/src/types/search-global.type";
 
-export const useDataTableUser = () => {
-  const { filters } = useUsersStore();
-
+export const useDataTableUser = (
+  filters: UserTableFilters = {
+    search: "",
+    page: 1,
+    limit: 5,
+    sortBy: "id",
+    sortOrder: "DESC",
+  }
+) => {
   const res = useQuery<{ data: User[]; meta: Meta }>({
     queryKey: ["data-table", filters],
     queryFn: () => getDataTable(filters),

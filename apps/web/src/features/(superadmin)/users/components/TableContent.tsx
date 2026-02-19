@@ -35,81 +35,51 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import { toast } from "@workspace/ui/components/sonner";
 import { useUsersStore } from "../store/users.store";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { 
+  useQueryStates, 
+  parseAsInteger, 
+  parseAsString, 
+  parseAsArrayOf 
+} from 'nuqs';
+import { useDebounce } from 'use-debounce';
 
 export default function TableContent() {
-  const { data: response, isLoading, error } = useDataTableUser();
+  const [urlFilters, setUrlFilters] = useQueryStates(
+    {
+      search: parseAsString.withDefault(""),
+      role: parseAsString,
+      permission: parseAsArrayOf(parseAsString),
+      page: parseAsInteger.withDefault(1),
+      limit: parseAsInteger.withDefault(5),
+      sortBy: parseAsString.withDefault("id"),
+      sortOrder: parseAsString.withDefault("DESC"),
+    },
+    {
+      history: "replace",
+      shallow: false,
+    }
+  );
+
+  const [searchValue, setSearchValue] = useState(urlFilters.search);
+  const [debouncedSearch] = useDebounce(searchValue, 1000);
+
+  useEffect(() => {
+    setUrlFilters({ search: debouncedSearch || null, page: 1 });
+  }, [debouncedSearch, setUrlFilters]);
+
+  const filters = {
+    ...urlFilters,
+    role: urlFilters.role ?? undefined,
+    permission: urlFilters.permission ?? undefined,
+    sortOrder: (urlFilters.sortOrder as "ASC" | "DESC") || "DESC",
+  };
+
+  const { data: response, isLoading, error } = useDataTableUser(filters);
   const queryClient = useQueryClient();
-  const { filters, setSearch, setFilters, openDialog } = useUsersStore();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { openDialog } = useUsersStore();
 
-  const [searchValue, setSearchValue] = useState(filters.search);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const SearchValue = () => {
-      setSearchValue(filters.search);
-    };
-    SearchValue()
-  }, [filters.search]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (searchValue !== filters.search) {
-        setSearch(searchValue);
-      }
-    }, 1000);
-    return () => clearTimeout(timeout);
-  }, [searchValue, setSearch, filters.search]);
-
-  useEffect(() => {
-    const search = searchParams.get("search");
-    const role = searchParams.get("role");
-    const permission = searchParams.getAll("permission");
-    const page = searchParams.get("page");
-    const limit = searchParams.get("limit");
-    const sortBy = searchParams.get("sortBy");
-    const sortOrder = searchParams.get("sortOrder");
-
-    if (search || role || (permission && permission.length > 0) || page || limit || sortBy || sortOrder) {
-      setFilters({
-        search: search || "",
-        role: role || undefined,
-        permission: permission.length > 0 ? permission : undefined,
-        page: page ? parseInt(page) || 1 : 1,
-        limit: limit ? parseInt(limit) || 5 : 5,
-        sortBy: sortBy || "id",
-        sortOrder: (sortOrder as "ASC" | "DESC") || "DESC",
-      });
-    }
-  }, [searchParams, setFilters]);
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (filters.search) params.append("search", filters.search);
-    if (filters.role) params.append("role", filters.role);
-    if (filters.permission && filters.permission.length > 0) {
-      filters.permission.forEach((p) => params.append("permission", p));
-    }
-    if (filters.page && filters.page !== 1)
-      params.append("page", filters.page.toString());
-    if (filters.limit && filters.limit !== 5)
-      params.append("limit", filters.limit.toString());
-    if (filters.sortBy && filters.sortBy !== "id")
-      params.append("sortBy", filters.sortBy);
-    if (filters.sortOrder && filters.sortOrder !== "DESC")
-      params.append("sortOrder", filters.sortOrder);
-
-    const newString = params.toString();
-    const currentString = searchParams.toString();
-
-    if (newString !== currentString) {
-      router.replace(`${pathname}?${newString}`);
-    }
-  }, [filters, pathname, router, searchParams]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
@@ -127,22 +97,17 @@ export default function TableContent() {
   };
 
   const handleSort = (field: string) => {
-    if (filters.sortBy === field) {
-      setFilters({
-        sortOrder: filters.sortOrder === "ASC" ? "DESC" : "ASC",
-      });
-    } else {
-      setFilters({
-        sortBy: field,
-        sortOrder: "ASC",
-      });
-    }
+    const isAsc = urlFilters.sortBy === field && urlFilters.sortOrder === "ASC";
+    setUrlFilters({
+      sortBy: field,
+      sortOrder: isAsc ? "DESC" : "ASC",
+    });
   };
 
   const renderSortIcon = (field: string) => {
-    if (filters.sortBy !== field)
+    if (urlFilters.sortBy !== field)
       return <ChevronsUpDown className="ml-2 h-4 w-4" />;
-    return filters.sortOrder === "ASC" ? (
+    return urlFilters.sortOrder === "ASC" ? (
       <ChevronUp className="ml-2 h-4 w-4" />
     ) : (
       <ChevronDown className="ml-2 h-4 w-4" />
@@ -227,7 +192,7 @@ export default function TableContent() {
               user?.map((item, index) => (
                 <TableRow key={item?.id}>
                   <TableCell className="capitalize">
-                    {index + 1 + (Number(filters.page) && !isNaN(Number(filters.page)) && Number(filters.page) > 0 ? Number(filters.page) - 1 : 0) * (Number(filters.limit) && !isNaN(Number(filters.limit)) && Number(filters.limit) > 0 ? Number(filters.limit) : 5)}
+                    {index + 1 + (urlFilters.page - 1) * urlFilters.limit}
                   </TableCell>
                   <TableCell className="capitalize">{item?.name}</TableCell>
                   <TableCell className="lowercase">{item?.email}</TableCell>
@@ -285,7 +250,7 @@ export default function TableContent() {
 
                   <TableCell>
                     <div className="flex items-center justify-center gap-2">
-                      <Button
+                       <Button
                         size="sm"
                         onClick={() => openDialog(item)}
                       >
@@ -340,16 +305,16 @@ export default function TableContent() {
           <Button
             variant="outline"
             size="sm"
-            disabled={filters.page <= 1}
-            onClick={() => setFilters({ page: filters.page - 1 })}
+            disabled={urlFilters.page <= 1}
+            onClick={() => setUrlFilters({ page: urlFilters.page - 1 })}
           >
             Previous
           </Button>
           <Button
             variant="outline"
             size="sm"
-            disabled={!meta || filters.page >= meta.totalPages}
-            onClick={() => setFilters({ page: filters.page + 1 })}
+            disabled={!meta || urlFilters.page >= meta.totalPages}
+            onClick={() => setUrlFilters({ page: urlFilters.page + 1 })}
           >
             Next
           </Button>

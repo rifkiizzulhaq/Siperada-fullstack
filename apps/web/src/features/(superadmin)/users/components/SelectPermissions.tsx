@@ -18,23 +18,28 @@ import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { PlusCircle, Check, Key } from "lucide-react";
 import { useState } from "react";
-import { useUsersStore } from "../store/users.store";
 import { usePermissions } from "../hooks/useUser.hooks";
+import { useQueryState, parseAsArrayOf, parseAsString, parseAsInteger } from 'nuqs';
 
 export const SelectPermissions = () => {
-    const { filters, setPermission } = useUsersStore();
+    const [permissionFilter, setPermissionFilter] = useQueryState('permission', parseAsArrayOf(parseAsString));
+    const [, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
     const { data: permissions } = usePermissions();
     const [open, setOpen] = useState(false);
 
     const handleSelect = (value: string) => {
-        const current = filters.permission || [];
+        const current = permissionFilter || [];
         const isSelected = current.includes(value);
+        let next;
+        
         if (isSelected) {
-            const next = current.filter((item) => item !== value);
-            setPermission(next.length > 0 ? next : undefined);
+            next = current.filter((item) => item !== value);
         } else {
-            setPermission([...current, value]);
+            next = [...current, value];
         }
+
+        setPermissionFilter(next.length > 0 ? next : null);
+        setPage(1);
     };
 
     return (
@@ -43,12 +48,12 @@ export const SelectPermissions = () => {
                 <Button variant="outline" size="sm" className="h-9 border-dashed">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Permission
-                    {filters.permission && filters.permission.length > 0 && (
+                    {permissionFilter && permissionFilter.length > 0 && (
                         <>
                             <div className="mx-2 h-4 w-[1px] bg-border" />
                             <div className="flex gap-1">
                                 <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs capitalize max-w-[100px] truncate">
-                                    {filters.permission.length} selected
+                                    {permissionFilter.length} selected
                                 </span>
                             </div>
                         </>
@@ -62,7 +67,7 @@ export const SelectPermissions = () => {
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
                             {permissions?.map((perm) => {
-                                const isSelected = filters.permission?.includes(perm.name);
+                                const isSelected = permissionFilter?.includes(perm.name);
                                 return (
                                     <CommandItem
                                         key={perm.id}
@@ -80,12 +85,15 @@ export const SelectPermissions = () => {
                                 );
                             })}
                         </CommandGroup>
-                        {filters.permission && filters.permission.length > 0 && (
+                        {permissionFilter && permissionFilter.length > 0 && (
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>
                                     <CommandItem
-                                        onSelect={() => setPermission(undefined)}
+                                        onSelect={() => {
+                                            setPermissionFilter(null);
+                                            setPage(1);
+                                        }}
                                         className="justify-center text-center"
                                     >
                                         Clear filters

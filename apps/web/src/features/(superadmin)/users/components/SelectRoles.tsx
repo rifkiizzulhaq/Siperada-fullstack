@@ -18,10 +18,11 @@ import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { Users, PlusCircle, Check } from "lucide-react";
 import { useState } from "react";
-import { useUsersStore } from "../store/users.store";
+import { useQueryState, parseAsString, parseAsInteger } from 'nuqs';
 
 export const SelectRoles = () => {
-    const { filters, setRole } = useUsersStore();
+    const [roleFilter, setRoleFilter] = useQueryState('role', parseAsString);
+    const [, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
     const [open, setOpen] = useState(false);
 
     const roles = [
@@ -36,12 +37,12 @@ export const SelectRoles = () => {
                 <Button variant="outline" size="sm" className="h-9 border-dashed">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Role
-                    {filters.role && (
+                    {roleFilter && (
                         <>
                             <div className="mx-2 h-4 w-[1px] bg-border" />
                             <div className="flex gap-1">
                                 <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs capitalize">
-                                    {filters.role}
+                                    {roleFilter}
                                 </span>
                             </div>
                         </>
@@ -55,16 +56,17 @@ export const SelectRoles = () => {
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
                             {roles.map((role) => {
-                                const isSelected = filters.role === role.value;
+                                const isSelected = roleFilter === role.value;
                                 return (
                                     <CommandItem
                                         key={role.value}
                                         onSelect={() => {
                                             if (isSelected) {
-                                                setRole(undefined);
+                                                setRoleFilter(null);
                                             } else {
-                                                setRole(role.value);
+                                                setRoleFilter(role.value);
                                             }
+                                            setPage(1);
                                             setOpen(false);
                                         }}
                                     >
@@ -80,12 +82,15 @@ export const SelectRoles = () => {
                                 );
                             })}
                         </CommandGroup>
-                        {filters.role && (
+                        {roleFilter && (
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>
                                     <CommandItem
-                                        onSelect={() => setRole(undefined)}
+                                        onSelect={() => {
+                                            setRoleFilter(null);
+                                            setPage(1);
+                                        }}
                                         className="justify-center text-center"
                                     >
                                         Clear filters

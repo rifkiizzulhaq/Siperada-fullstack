@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextProgress } from "@/src/providers/ProgressProvider";
 import QueryProvider from "@/src/providers/QueryProvider";
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import "@workspace/ui/globals.css";
 import { Toaster } from "@workspace/ui/components/sonner";
@@ -39,10 +40,12 @@ export default function RootLayout({
             <SessionErrorHandler />
             <QueryProvider>
               <TooltipProvider>
-                <NextProgress>
-                  {children}
-                  <Toaster position="top-right" />
-                </NextProgress>
+                <NuqsAdapter>
+                  <NextProgress>
+                    {children}
+                    <Toaster position="top-right" />
+                  </NextProgress>
+                </NuqsAdapter>
               </TooltipProvider>
             </QueryProvider>
           </AuthProvider>
