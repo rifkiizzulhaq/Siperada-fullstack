@@ -1,9 +1,9 @@
-import KategoriContent from "@/src/features/(admin)/kategori/components/KategoriContent";
+import KategoriTableContent from "@/src/features/(admin)/kategori/components/KategoriTableContent";
 
 export default function KategoriPage() {
     return (
         <div className="p-4">
-            <KategoriContent />
+            <KategoriTableContent />
         </div>
     );
 }
