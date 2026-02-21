@@ -47,9 +47,18 @@ export const useUpdateKategori = (onSuccess?: () => void) => {
   });
 };
 
-export const useDeleteKategori = (onSuccess?: () => void) => {
+export const useDeleteKategori = (
+  onSuccess?: () => void,
+  onError?: (message: string) => void,
+) => {
   return useMutation({
     mutationFn: (id: number) => deletes(id),
     onSuccess,
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? "Terjadi kesalahan saat menghapus";
+      onError?.(message);
+    },
   });
 };

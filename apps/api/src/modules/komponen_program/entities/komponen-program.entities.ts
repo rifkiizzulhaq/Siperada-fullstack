@@ -22,7 +22,7 @@ export class KomponenProgram {
   @Column({ nullable: true })
   kode_parent: number;
 
-  @Column()
+  @Column({ unique: true })
   kode: string;
 
   @Column()
@@ -34,6 +34,19 @@ export class KomponenProgram {
   })
   @JoinColumn({ name: 'kategoriId' })
   kategori: Kategori;
+
+  // Self-referential: parent KP
+  @ManyToOne(() => KomponenProgram, (kp) => kp.children, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'kode_parent' })
+  parent: KomponenProgram;
+
+  // Self-referential: child KPs yang merujuk ke KP ini
+  @OneToMany(() => KomponenProgram, (kp) => kp.parent)
+  children: KomponenProgram[];
 
   @OneToMany(() => UsulanKegiatan, (uk) => uk.komponen_program)
   uk: UsulanKegiatan[];

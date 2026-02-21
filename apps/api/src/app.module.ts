@@ -11,7 +11,6 @@ import { UsulanKegiatanModule } from './modules/usulan_kegiatan/usulan_kegiatan.
 import { AuthModule } from './modules/auth/auth.module';
 import { envSchema } from './config/env.schema';
 import { CoreModule } from './core/core.module';
-import { RedisService } from './database/redis/redis.service';
 import { RedisModule } from './database/redis/redis.module';
 import { JudulKegiatanModule } from './modules/judul_kegiatan/judul_kegiatan.module';
 
@@ -37,6 +36,6 @@ import { JudulKegiatanModule } from './modules/judul_kegiatan/judul_kegiatan.mod
     JudulKegiatanModule,
   ],
   controllers: [],
-  providers: [RedisService],
+  providers: [],
 })
 export class AppModule {}

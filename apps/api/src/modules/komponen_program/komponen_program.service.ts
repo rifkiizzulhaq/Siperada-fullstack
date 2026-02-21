@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { KomponenProgram } from './entities/komponen-program.entities';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { KategoriService } from '../kategori/kategori.service';
 import {
   CreateKomponenProgram,
@@ -45,8 +45,20 @@ export class KomponenProgramService {
       name: data.name,
     });
 
-    await this.kpRepository.save(kp);
-    return kp;
+    try {
+      await this.kpRepository.save(kp);
+      return kp;
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        const mysqlError = error.driverError as { code?: string };
+        if (mysqlError.code === 'ER_DUP_ENTRY') {
+          throw new BadRequestException(
+            `Kode "${data.kode}" sudah digunakan. Gunakan kode yang berbeda.`,
+          );
+        }
+      }
+      throw error;
+    }
   };
 
   update = async (
@@ -56,14 +68,49 @@ export class KomponenProgramService {
     if (data.kategoriId) {
       await this.kategoriRepository.findKategoriById(data.kategoriId);
     }
-    await this.kpRepository.update(id, data);
+    try {
+      await this.kpRepository.update(id, data);
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        const mysqlError = error.driverError as { code?: string };
+        if (mysqlError.code === 'ER_DUP_ENTRY') {
+          throw new BadRequestException(
+            `Kode "${data.kode}" sudah digunakan. Gunakan kode yang berbeda.`,
+          );
+        }
+      }
+      throw error;
+    }
     return await this.findKomponenProgramById(id);
   };
 
   delete = async (id: number): Promise<KomponenProgram> => {
     const kp = await this.findKomponenProgramById(id);
-    await this.kpRepository.delete(id);
-    return kp;
+
+    const childCount = await this.kpRepository.count({
+      where: { kode_parent: id },
+    });
+
+    if (childCount > 0) {
+      throw new BadRequestException(
+        `Komponen program ini tidak dapat dihapus karena masih memiliki ${childCount} komponen program anak. Hapus child-nya terlebih dahulu.`,
+      );
+    }
+
+    try {
+      await this.kpRepository.delete(id);
+      return kp;
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        const mysqlError = error.driverError as { code?: string };
+        if (mysqlError.code === 'ER_ROW_IS_REFERENCED_2') {
+          throw new BadRequestException(
+            'Komponen program tidak dapat dihapus karena masih digunakan oleh data lain',
+          );
+        }
+      }
+      throw error;
+    }
   };
 
   searchByParams = async (

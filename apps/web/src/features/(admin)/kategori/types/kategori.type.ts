@@ -28,10 +28,11 @@ export interface KategoriActions {
   closeDialog: () => void;
 }
 
-export type KategoriStore = KategoriState & KategoriActions
-
 export interface KategoriResponse {
   data: Kategori[];
   meta: Meta;
 }
+
+export type KategoriStore = KategoriState & KategoriActions
+
 

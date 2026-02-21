@@ -76,11 +76,17 @@ export default function KategoriTableContent() {
   const { openDialog } = useKategoriStore();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const deleteMutation = useDeleteKategori(() => {
-    queryClient.invalidateQueries({ queryKey: ["data-table"] });
-    toast.success("Kategori berhasil dihapus");
-    setDeleteId(null);
-  });
+  const deleteMutation = useDeleteKategori(
+    () => {
+      queryClient.invalidateQueries({ queryKey: ["data-table"] });
+      toast.success("Kategori berhasil dihapus");
+      setDeleteId(null);
+    },
+    (message) => {
+      toast.error(message);
+      setDeleteId(null);
+    },
+  );
 
   const handleDelete = (id: number) => {
     setDeleteId(id);
