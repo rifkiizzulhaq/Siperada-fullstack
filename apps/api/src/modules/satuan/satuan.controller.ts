@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from '../../common/guard/admin.guard';
+import { UnitGuard } from '../../common/guard/unit.guard';
 import { SatuanService } from './satuan.service';
 import { Permissions } from '../../common/decorator/permission.decorator';
 import { CreateSatuanDto } from './dto/create-satuan.dto';
@@ -21,10 +22,16 @@ import { SearchSatuanResponse } from './transform/search-satuan-response.transfo
 import { UpdateSatuanDto } from './dto/update-satuan.dto';
 
 @Controller('satuan')
-@UseGuards(AdminGuard)
 export class SatuanController {
   constructor(private readonly satuanService: SatuanService) {}
 
+  @UseGuards(UnitGuard)
+  @Get('all')
+  async findAllForUnit() {
+    return await this.satuanService.findAllSatuan();
+  }
+
+  @UseGuards(AdminGuard)
   @Transform(SatuanResponse)
   @Permissions('admin:read-satuan')
   @Get()
@@ -32,6 +39,7 @@ export class SatuanController {
     return await this.satuanService.findAllSatuan();
   }
 
+  @UseGuards(AdminGuard)
   @Transform(SearchSatuanResponse)
   @Permissions('admin:search-satuan')
   @Get('search')
@@ -39,6 +47,7 @@ export class SatuanController {
     return await this.satuanService.searchByParams(query);
   }
 
+  @UseGuards(AdminGuard)
   @Transform(SatuanResponse)
   @Permissions('admin:create-satuan')
   @Post()
@@ -46,6 +55,7 @@ export class SatuanController {
     return await this.satuanService.create(body);
   }
 
+  @UseGuards(AdminGuard)
   @Transform(SatuanResponse)
   @Permissions('admin:update-satuan')
   @Patch('/:id')
@@ -56,6 +66,7 @@ export class SatuanController {
     return await this.satuanService.update(id, body);
   }
 
+  @UseGuards(AdminGuard)
   @Transform(SatuanResponse)
   @Permissions('admin:delete-satuan')
   @Delete('/:id')

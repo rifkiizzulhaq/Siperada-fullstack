@@ -13,6 +13,11 @@ export const getAllKp = async (): Promise<KpType[]> => {
   return res.data;
 };
 
+export const getAllKpForUnit = async (): Promise<KpType[]> => {
+  const { data: res } = await axiosInstance.get<{ data: KpType[] }>("/komponen-program/all");
+  return res.data;
+};
+
 export const update = async (id: number, body: KpType): Promise<KpType> => {
   const { data: res } = await axiosInstance.patch<{ data: KpType }>(`/komponen-program/${id}`, body);
   return res.data;

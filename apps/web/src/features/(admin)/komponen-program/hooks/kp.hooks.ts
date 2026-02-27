@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { create, getAllKp, getKategori, searchKp, update, deletes } from "../api/kp.api";
+import { create, getAllKp, getAllKpForUnit, getKategori, searchKp, update, deletes } from "../api/kp.api";
 import { filter } from "../types/kp.type";
 import { KpSchema } from "../schema/kp.schema";
 
@@ -21,6 +21,13 @@ export const useGetAllKp = () => {
   return useQuery({
     queryKey: ["kp-all"],
     queryFn: getAllKp,
+  });
+};
+
+export const useGetAllKpForUnit = () => {
+  return useQuery({
+    queryKey: ["kp-all-unit"],
+    queryFn: getAllKpForUnit,
   });
 };
 

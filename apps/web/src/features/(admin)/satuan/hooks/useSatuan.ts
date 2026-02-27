@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getAllSatuan, Search, create, update, deletes } from "../api/satuan.api";
+import { getAllSatuan, getAllSatuanForUnit, Search, create, update, deletes } from "../api/satuan.api";
 import { filterType } from "../types/satuan.type";
 import { SatuanSchema } from "../schema/satuan.schema";
 
@@ -7,6 +7,13 @@ export const useGetAllsatuan = () => {
   return useQuery({
     queryKey: ["data-satuan"],
     queryFn: getAllSatuan,
+  });
+};
+
+export const useGetAllSatuanForUnit = () => {
+  return useQuery({
+    queryKey: ["data-satuan-unit"],
+    queryFn: getAllSatuanForUnit,
   });
 };
 
