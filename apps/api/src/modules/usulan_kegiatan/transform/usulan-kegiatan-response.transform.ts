@@ -13,6 +13,9 @@ export class UsulanKegiatanResponse {
   harga_satuan: number;
 
   @Expose()
+  parentId: number;
+
+  @Expose()
   tahun_anggaran: string;
 
   @Expose()

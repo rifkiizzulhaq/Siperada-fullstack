@@ -1,21 +1,25 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateUsulanKegiatanDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  komponen_programId: number;
+  komponen_programId?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  satuanId: number;
+  parentId?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  volume: number;
+  satuanId?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  harga_satuan: number;
+  volume?: number;
+
+  @IsOptional()
+  @IsNumber()
+  harga_satuan?: number;
 
   @IsNotEmpty()
   @IsString()

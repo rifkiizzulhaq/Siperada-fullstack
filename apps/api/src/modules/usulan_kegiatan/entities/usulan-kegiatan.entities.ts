@@ -17,16 +17,30 @@ export class UsulanKegiatan {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @ManyToOne(() => UsulanKegiatan, (uk) => uk.children, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'parentId' })
+  parent: UsulanKegiatan;
+
+  @OneToMany(() => UsulanKegiatan, (uk) => uk.parent)
+  children: UsulanKegiatan[];
+
+  @Column({ nullable: true })
+  parentId: number;
+
+  @Column({ nullable: true })
   satuanId: number;
 
-  @Column()
+  @Column({ nullable: true })
   komponen_programId: number;
 
-  @Column()
+  @Column({ default: 0 })
   volume: number;
 
-  @Column()
+  @Column({ default: 0 })
   harga_satuan: number;
 
   @Column({ type: 'date' })

@@ -32,6 +32,12 @@ export class UsulanKegiatanController {
     return await this.ukService.findAllUsulanKegiatan();
   }
 
+  @Permissions('unit:read-usulan-kegiatan')
+  @Get('tahun')
+  async getDistinctTahunAnggaran() {
+    return await this.ukService.getDistinctTahunAnggaran();
+  }
+
   @Transform(SearchUsulanKegiatanResponse)
   @Permissions('unit:search-usulan-kegiatan')
   @Get('search')

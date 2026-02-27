@@ -7,6 +7,10 @@ export class UpdateUsulanKegiatanDto {
 
   @IsOptional()
   @IsNumber()
+  parentId?: number;
+
+  @IsOptional()
+  @IsNumber()
   satuanId?: number;
 
   @IsOptional()

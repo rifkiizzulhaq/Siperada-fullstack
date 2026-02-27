@@ -25,4 +25,8 @@ export class SearchUsulanKegiatanDto {
   @IsOptional()
   @IsString()
   sortBy?: string = 'id';
+
+  @IsOptional()
+  @IsString()
+  tahun_anggaran?: string;
 }

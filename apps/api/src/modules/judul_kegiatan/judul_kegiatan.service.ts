@@ -88,7 +88,11 @@ export class JudulKegiatanService {
     query: searchJudulKegiatan,
   ): Promise<searchJudulKegiatanResponse<JudulKegiatan>> => {
     const qb = this.jkRepository.createQueryBuilder('judulKegiatan');
-    qb.leftJoinAndSelect('komponen_program.kategori', 'kategori');
+    qb.leftJoinAndSelect('judulKegiatan.usulan_kegiatan', 'usulan_kegiatan');
+    qb.leftJoinAndSelect(
+      'usulan_kegiatan.komponen_program',
+      'komponen_program',
+    );
     qb.leftJoinAndSelect('judulKegiatan.akun_detail', 'akun_detail');
     qb.leftJoinAndSelect('judulKegiatan.satuan', 'satuan');
 

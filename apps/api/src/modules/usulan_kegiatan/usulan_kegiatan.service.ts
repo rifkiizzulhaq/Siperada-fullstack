@@ -39,13 +39,21 @@ export class UsulanKegiatanService {
   };
 
   create = async (data: CreateUsulanKegiatan): Promise<UsulanKegiatan> => {
-    await this.kpService.findKomponenProgramById(data.komponen_programId);
-    await this.satuanService.findSatuanById(data.satuanId);
+    if (data.komponen_programId) {
+      await this.kpService.findKomponenProgramById(data.komponen_programId);
+    }
+    if (data.satuanId) {
+      await this.satuanService.findSatuanById(data.satuanId);
+    }
+    if (data.parentId) {
+      await this.findUsulanKegiatanById(data.parentId);
+    }
     const uk = this.ukRepository.create({
       komponen_programId: data.komponen_programId,
       satuanId: data.satuanId,
-      volume: data.volume,
-      harga_satuan: data.harga_satuan,
+      parentId: data.parentId,
+      volume: data.volume ?? 0,
+      harga_satuan: data.harga_satuan ?? 0,
       tahun_anggaran: data.tahun_anggaran,
     });
 
@@ -67,21 +75,54 @@ export class UsulanKegiatanService {
   };
 
   delete = async (id: number): Promise<UsulanKegiatan> => {
+    const uk = await this.findUsulanKegiatanById(id);
+
+    const childCount = await this.ukRepository.count({
+      where: { parentId: id },
+    });
+
+    if (childCount > 0) {
+      throw new BadRequestException(
+        `Tidak dapat dihapus karena masih memiliki ${childCount} data turunan. Hapus dari baris paling bawah terlebih dahulu.`,
+      );
+    }
+
     try {
-      const uk = await this.findUsulanKegiatanById(id);
       await this.ukRepository.delete(id);
-      return uk;
     } catch (error) {
       if (error instanceof QueryFailedError) {
         const mysqlError = error.driverError as { code?: string };
         if (mysqlError.code === 'ER_ROW_IS_REFERENCED_2') {
           throw new BadRequestException(
-            'tidak dapat dihapus karena masih digunakan oleh data lain',
+            'Tidak dapat dihapus karena masih digunakan oleh data lain.',
           );
         }
       }
       throw error;
     }
+
+    return uk;
+  };
+
+  getDistinctTahunAnggaran = async (): Promise<string[]> => {
+    const rows = await this.ukRepository
+      .createQueryBuilder('usulanKegiatan')
+      .select('DISTINCT usulanKegiatan.tahun_anggaran', 'tahun_anggaran')
+      .where('usulanKegiatan.tahun_anggaran IS NOT NULL')
+      .orderBy('usulanKegiatan.tahun_anggaran', 'DESC')
+      .getRawMany();
+
+    return rows.map((r) => {
+      const val = r.tahun_anggaran;
+      if (typeof val === 'string') return val.slice(0, 10);
+      if (val instanceof Date) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      return String(val);
+    });
   };
 
   searchByParams = async (
@@ -89,6 +130,7 @@ export class UsulanKegiatanService {
   ): Promise<searchUsulanKegiatanResponse<UsulanKegiatan>> => {
     const qb = this.ukRepository.createQueryBuilder('usulanKegiatan');
     qb.leftJoinAndSelect('usulanKegiatan.komponen_program', 'komponen_program');
+    qb.leftJoinAndSelect('komponen_program.kategori', 'kategori');
     qb.leftJoinAndSelect('usulanKegiatan.satuan', 'satuan');
 
     if (query.search) {
@@ -105,6 +147,19 @@ export class UsulanKegiatanService {
           '(komponen_program.kode LIKE :search OR komponen_program.name LIKE :search OR satuan.name LIKE :search)',
           { search: `%${query.search}%` },
         );
+      }
+    }
+
+    if (query.tahun_anggaran && query.tahun_anggaran !== 'all') {
+      const isYearOnly = /^\d{4}$/.test(query.tahun_anggaran);
+      if (isYearOnly) {
+        qb.andWhere('YEAR(usulanKegiatan.tahun_anggaran) = :tahun', {
+          tahun: parseInt(query.tahun_anggaran, 10),
+        });
+      } else {
+        qb.andWhere('usulanKegiatan.tahun_anggaran = :tahun', {
+          tahun: query.tahun_anggaran,
+        });
       }
     }
 
