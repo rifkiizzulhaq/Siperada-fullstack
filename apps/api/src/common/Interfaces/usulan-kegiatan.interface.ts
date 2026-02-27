@@ -1,14 +1,16 @@
 export interface CreateUsulanKegiatan {
-  komponen_programId: number;
-  satuanId: number;
-  volume: number;
-  harga_satuan: number;
+  komponen_programId?: number;
+  satuanId?: number;
+  parentId?: number;
+  volume?: number;
+  harga_satuan?: number;
   tahun_anggaran: string;
 }
 
 export interface UpdateUsulanKegiatan {
   komponen_programId?: number;
   satuanId?: number;
+  parentId?: number;
   volume?: number;
   harga_satuan?: number;
   tahun_anggaran?: string;
@@ -20,6 +22,7 @@ export class searchUsulanKegiatan {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  tahun_anggaran?: string;
 }
 
 export class searchUsulanKegiatanResponse<T> {

@@ -7,6 +7,12 @@ export const getAllSatuan = async (): Promise<Satuan[]> => {
   return data.data;
 };
 
+// Endpoint khusus untuk role unit (tidak butuh permission admin)
+export const getAllSatuanForUnit = async (): Promise<Satuan[]> => {
+  const { data: res } = await axiosInstance.get<{ data: Satuan[] }>("/satuan/all");
+  return res.data;
+};
+
 export const create = async (body: Satuan): Promise<Satuan> => {
   const { data } = await axiosInstance.post<{ data: Satuan }>("/satuan", body);
   return data.data;

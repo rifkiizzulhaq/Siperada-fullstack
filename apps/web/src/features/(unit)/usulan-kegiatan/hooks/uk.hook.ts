@@ -53,10 +53,10 @@ export const useCreateUk = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["search-uk"] });
       queryClient.invalidateQueries({ queryKey: ["tahun-anggaran"] });
-      toast.success("Usulan kegiatan berhasil ditambahkan!");
+      toast.success("Baris Usulan kegiatan berhasil ditambahkan");
     },
     onError: () => {
-      toast.error("Gagal menambahkan usulan kegiatan.");
+      toast.error("Gagal menambahkan baris usulan kegiatan.");
     },
   });
 };
@@ -68,7 +68,7 @@ export const useDeleteUk = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["search-uk"] });
       queryClient.invalidateQueries({ queryKey: ["tahun-anggaran"] });
-      toast.success("Baris usulan berhasil dihapus");
+      toast.success("Baris usulan kegiatan berhasil dihapus");
     },
     onError: (error: any) => {
       const errorMessage = error?.response?.data?.message || "Gagal menghapus baris usulan";
